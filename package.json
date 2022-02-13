@@ -1,5 +1,5 @@
 {
-  "name": "ytdl-web",
+  "name": "web-ytdl",
   "version": "1.0.0",
   "author": "iamtakagi",
   "main": "dist/main.js",
