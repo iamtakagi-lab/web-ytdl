@@ -2,3 +2,4 @@ node_modules
 *.mp4
 yarn*
 .DS_Store
+dist
