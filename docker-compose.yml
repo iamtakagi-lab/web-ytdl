@@ -1,8 +1,0 @@
-version: '3.8'
-services:
-  app:
-    build:
-      context: .
-    environment:
-      - PORT=5050
-    restart: unless-stopped
