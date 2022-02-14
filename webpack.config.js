@@ -21,11 +21,6 @@ const config = {
                 loader: "ts-loader",
                 options: { compilerOptions: { module: "es2020", moduleResolution: "node" } },
             },
-            {
-                test: /\.tsx$/,
-                loader: "ts-loader",
-                options: { compilerOptions: { module: "es2020", moduleResolution: "node" } },
-            }
         ],
     },
     resolve: {
