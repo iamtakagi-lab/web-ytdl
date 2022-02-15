@@ -20,7 +20,11 @@
               type="text"
               placeholder="https://www.youtube.com/watch?v=???"
             />
-            <button id="download">ダウンロード</button>
+            <select id="quality" onchange="play();">
+              <option value="highest">highest</option>
+              <option value="lowest">lowest</option>
+            </select>
+            <button id="download">Download</button>
           </div>
         </section>
       </main>

@@ -8,19 +8,24 @@ import serve from "koa-static";
 const app = new Koa();
 const router = new Router();
 
-const getYtdlStream = (url: string) => {
-  return ytdl(url);
+type Quality = 'lowest' | 'highest' | 'highestaudio' | 'lowestaudio' | 'highestvideo' | 'lowestvideo' | string | number | string[] | number[];
+
+const getYtdlStream = (url: string, quality: Quality) => {
+  return ytdl(url, {quality});
 };
 
 router.get("/download", async (ctx, next) => {
   const url = ctx.query.url;
-  if(!url || typeof url != "string") return next()
+  const quality = ctx.query.quality;
+  if (!url || typeof url != "string") return next();
+  if (!quality || typeof quality != "string") return next();
   const id = new URL(url).searchParams.get("v") 
+  if (!id || typeof id != "string") return next();
   ctx.type = "video/mp4";
   ctx.attachment(`${id}.mp4`);
   const destFilePath = path.resolve(__dirname, "..", "tmp", `${id}.mp4`);
   ctx.body = await new Promise<fs.ReadStream>((resolve) => {
-    const stream = getYtdlStream(url);
+    const stream = getYtdlStream(url, quality);
     stream.pipe(fs.createWriteStream(destFilePath));
     stream.on("end", () => {
       return resolve(fs.createReadStream(destFilePath))
