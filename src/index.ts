@@ -37,7 +37,7 @@ router.get("/download", async (ctx, next) => {
   fs.unlinkSync(destFilePath)
 });
 
-app.use(serve("./public"));
+app.use(serve(path.join(__dirname, '..', 'public')));
 app.use(router.routes());
 app.use(router.allowedMethods());
 app.listen(process.env.PORT || 8080);
