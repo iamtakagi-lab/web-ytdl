@@ -1,43 +1,41 @@
 import ytdl from "ytdl-core";
 import path from "path";
-import fs from "fs";
-import Koa from "koa";
-import Router from "@koa/router";
-import serve from "koa-static";
+import express from "express";
+import { spawn } from "child_process";
+import stream from "stream";
+const app = express();
 
-const app = new Koa();
-const router = new Router();
-
-type Quality = 'lowest' | 'highest' | 'highestaudio' | 'lowestaudio' | 'highestvideo' | 'lowestvideo' | string | number | string[] | number[];
-
-const getYtdlStream = (url: string, quality: Quality) => {
-  return ytdl(url, {quality});
-};
-
-router.get("/download", async (ctx, next) => {
-  const url = ctx.query.url;
-  const quality = ctx.query.quality;
+app.get("/download", async (req, res, next) => {
+  const url = req.query.url;
   if (!url || typeof url != "string") return next();
-  if (!quality || typeof quality != "string") return next();
-  const id = new URL(url).searchParams.get("v") 
-  if (!id || typeof id != "string") return next();
-  ctx.type = "video/mp4";
-  ctx.attachment(`${id}.mp4`);
-  const destFilePath = path.resolve(__dirname, "..", "tmp", `${id}.mp4`);
-  ctx.body = await new Promise<fs.ReadStream>((resolve) => {
-    const stream = getYtdlStream(url, quality);
-    stream.pipe(fs.createWriteStream(destFilePath));
-    stream.on("end", () => {
-      return resolve(fs.createReadStream(destFilePath))
-    });
-    stream.on("error", (err: Error) => {
-      console.error(err);
-    });
-  })
-  fs.unlinkSync(destFilePath)
+  const info = await ytdl.getInfo(url);
+  const audioStream = ytdl.downloadFromInfo(info, { quality: 'highestaudio' });
+  const videoStream = ytdl.downloadFromInfo(info, { quality: 'highestvideo' });
+  //映像と音声を結合するエンコード処理
+  const ffmpeg = spawn("ffmpeg", [
+      '-loglevel', '8', '-hide_banner',
+      '-i', 'pipe:3', '-i', 'pipe:4',
+      '-map', '0:a', '-map', '1:v',
+      '-c', 'copy',
+      '-f', 'matroska', 'pipe:5'
+  ], {
+      // Windowsの場合、ポップアップが出ないようにする
+      windowsHide: true,
+      stdio: [
+          'inherit', 'inherit', 'inherit',
+          'pipe', 'pipe', 'pipe'
+      ]
+  }) as any
+  //用意したパイプに流し込む
+  audioStream.pipe(ffmpeg.stdio[3]);
+  videoStream.pipe(ffmpeg.stdio[4]);
+  //エンコード結果をストリーム化
+  const resultStream = ffmpeg.stdio[5].pipe(new stream.PassThrough({highWaterMark: 1920 * 1080}))
+  res.contentType("video/mp4");
+  res.attachment(`${info.videoDetails.title}.mp4`);
+  resultStream.pipe(res, {end: true})
+  res.on("close", () => ffmpeg.kill())
 });
 
-app.use(serve(path.resolve(__dirname, '..', 'public')));
-app.use(router.routes());
-app.use(router.allowedMethods());
+app.use(express.static(path.resolve(__dirname, "..", "public")));
 app.listen(process.env.PORT || 8080);
