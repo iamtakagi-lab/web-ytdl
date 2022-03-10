@@ -1,6 +1,6 @@
 {
   "name": "web-ytdl",
-  "version": "1.",
+  "version": "1.2.0",
   "licence": "MIT",
   "author": "iamtakagi",
   "main": "dist/main.js",
