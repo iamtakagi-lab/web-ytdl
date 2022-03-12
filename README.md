@@ -14,5 +14,5 @@ services:
     restart: unless-stopped
 ```
 
-## LICENCE
+## LICENSE
 undecided.
